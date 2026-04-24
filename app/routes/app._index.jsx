@@ -15,7 +15,7 @@ export const loader = async ({ request }) => {
   const response = await admin.graphql(
     `#graphql
       query loyaltySettings {
-        shop {
+        currentAppInstallation {
           metafield(namespace: "loyalty", key: "settings") {
             value
           }
@@ -23,7 +23,7 @@ export const loader = async ({ request }) => {
       }`,
   );
   const responseJson = await response.json();
-  const rawValue = responseJson?.data?.shop?.metafield?.value;
+  const rawValue = responseJson?.data?.currentAppInstallation?.metafield?.value;
 
   if (!rawValue) {
     return { settings: DEFAULT_SETTINGS };
@@ -73,22 +73,23 @@ export const action = async ({ request }) => {
     return { ok: false, errors };
   }
 
-  const shopQueryResponse = await admin.graphql(
+  const appInstallationQueryResponse = await admin.graphql(
     `#graphql
-      query loyaltySettingsShopId {
-        shop {
+      query loyaltySettingsAppInstallationId {
+        currentAppInstallation {
           id
         }
       }`,
   );
-  const shopQueryJson = await shopQueryResponse.json();
-  const ownerId = shopQueryJson?.data?.shop?.id;
+  const appInstallationQueryJson = await appInstallationQueryResponse.json();
+  // App-owned metafield: ownerId is the AppInstallation id, not the Shop id.
+  const ownerId = appInstallationQueryJson?.data?.currentAppInstallation?.id;
 
   if (!ownerId) {
     return {
       ok: false,
       errors: {
-        form: "Could not load the current shop. Please try again.",
+        form: "Could not load the current app installation. Please try again.",
       },
     };
   }
@@ -112,6 +113,7 @@ export const action = async ({ request }) => {
       variables: {
         metafields: [
           {
+            // App-owned settings are stored against the app installation record.
             ownerId,
             namespace: "loyalty",
             key: "settings",
