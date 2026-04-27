@@ -5,9 +5,12 @@
 %}
 
 {% if product and variant_price_cents > 0 and points_per_dollar > 0 and earned_points > 0 %}
-  <div class="vesa-loyalty-points-block" {{ block.shopify_attributes }}>
-    {% assign message = 'settings.points_message' | t: points: earned_points %}
-    {{ message }}
+  <div
+    class="vesa-loyalty-points-block"
+    style="font-size: 13px; font-weight: 500; color: #6b7280; margin-top: 4px; margin-bottom: 10px;"
+    {{ block.shopify_attributes }}
+  >
+    🎁 Earn {{ earned_points }} points
   </div>
 {% endif %}
 
