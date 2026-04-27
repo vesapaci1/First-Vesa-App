@@ -1,0 +1,7 @@
+{
+  "settings": {
+    "extension_name": "Loyalty Points PDP",
+    "points_message": "Buy this product and earn {{ points }} points"
+  }
+}
+

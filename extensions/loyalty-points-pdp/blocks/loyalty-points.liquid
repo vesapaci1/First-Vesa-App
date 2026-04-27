@@ -1,0 +1,22 @@
+{% liquid
+  assign points_per_dollar = shop.metafields.loyalty.points_per_dollar_public.value | default: 0 | plus: 0
+  assign variant_price_cents = product.selected_or_first_available_variant.price | default: product.price | plus: 0
+  assign earned_points = variant_price_cents | times: points_per_dollar | divided_by: 100.0 | round
+%}
+
+{% if product and variant_price_cents > 0 and points_per_dollar > 0 and earned_points > 0 %}
+  <div class="vesa-loyalty-points-block" {{ block.shopify_attributes }}>
+    {% assign message = 'settings.points_message' | t: points: earned_points %}
+    {{ message }}
+  </div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Loyalty points",
+  "target": "section",
+  "templates": ["product"],
+  "settings": []
+}
+{% endschema %}
+
