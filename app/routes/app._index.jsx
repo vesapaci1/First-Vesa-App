@@ -9,6 +9,27 @@ const DEFAULT_SETTINGS = {
   rewardValuePerPoint: 0.01,
 };
 
+function parseLoyaltySettings(rawValue) {
+  if (!rawValue) return null;
+
+  try {
+    const parsed = JSON.parse(rawValue);
+    const pointsPerDollar = Number(parsed?.pointsPerDollar);
+    const rewardValuePerPoint = Number(parsed?.rewardValuePerPoint);
+
+    if (pointsPerDollar > 0 && rewardValuePerPoint > 0) {
+      return {
+        pointsPerDollar,
+        rewardValuePerPoint,
+      };
+    }
+  } catch (_error) {
+    // Invalid JSON falls back safely.
+  }
+
+  return null;
+}
+
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
 
@@ -24,29 +45,8 @@ export const loader = async ({ request }) => {
   );
   const responseJson = await response.json();
   const rawValue = responseJson?.data?.currentAppInstallation?.metafield?.value;
-
-  if (!rawValue) {
-    return { settings: DEFAULT_SETTINGS };
-  }
-
-  try {
-    const parsed = JSON.parse(rawValue);
-    const pointsPerDollar = Number(parsed?.pointsPerDollar);
-    const rewardValuePerPoint = Number(parsed?.rewardValuePerPoint);
-
-    if (pointsPerDollar > 0 && rewardValuePerPoint > 0) {
-      return {
-        settings: {
-          pointsPerDollar,
-          rewardValuePerPoint,
-        },
-      };
-    }
-  } catch (_error) {
-    // Invalid JSON falls back to defaults.
-  }
-
-  return { settings: DEFAULT_SETTINGS };
+  const parsedSettings = parseLoyaltySettings(rawValue);
+  return { settings: parsedSettings ?? DEFAULT_SETTINGS };
 };
 
 export const action = async ({ request }) => {
@@ -73,28 +73,28 @@ export const action = async ({ request }) => {
     return { ok: false, errors };
   }
 
-  const appInstallationQueryResponse = await admin.graphql(
+  const idsQueryResponse = await admin.graphql(
     `#graphql
-      query loyaltySettingsAppInstallationId {
+      query loyaltySettingsOwnerIds {
         currentAppInstallation {
           id
         }
       }`,
   );
-  const appInstallationQueryJson = await appInstallationQueryResponse.json();
+  const idsQueryJson = await idsQueryResponse.json();
   // App-owned metafield: ownerId is the AppInstallation id, not the Shop id.
-  const ownerId = appInstallationQueryJson?.data?.currentAppInstallation?.id;
+  const appInstallationId = idsQueryJson?.data?.currentAppInstallation?.id;
 
-  if (!ownerId) {
+  if (!appInstallationId) {
     return {
       ok: false,
       errors: {
-        form: "Could not load the current app installation. Please try again.",
+        form: "Could not load app installation. Please try again.",
       },
     };
   }
 
-  const mutationResponse = await admin.graphql(
+  const saveSettingsResponse = await admin.graphql(
     `#graphql
       mutation saveLoyaltySettings($metafields: [MetafieldsSetInput!]!) {
         metafieldsSet(metafields: $metafields) {
@@ -113,8 +113,8 @@ export const action = async ({ request }) => {
       variables: {
         metafields: [
           {
-            // App-owned settings are stored against the app installation record.
-            ownerId,
+            // Source of truth: app-owned loyalty settings on currentAppInstallation.
+            ownerId: appInstallationId,
             namespace: "loyalty",
             key: "settings",
             type: "json",
@@ -127,14 +127,81 @@ export const action = async ({ request }) => {
       },
     },
   );
-  const mutationJson = await mutationResponse.json();
-  const userErrors = mutationJson?.data?.metafieldsSet?.userErrors ?? [];
+  const saveSettingsJson = await saveSettingsResponse.json();
+  const saveSettingsErrors = saveSettingsJson?.data?.metafieldsSet?.userErrors ?? [];
 
-  if (userErrors.length > 0) {
+  if (saveSettingsErrors.length > 0) {
     return {
       ok: false,
       errors: {
-        form: userErrors[0].message,
+        form: saveSettingsErrors[0].message,
+      },
+    };
+  }
+
+  const storefrontSyncQueryResponse = await admin.graphql(
+    `#graphql
+      query storefrontSyncSource {
+        currentAppInstallation {
+          metafield(namespace: "loyalty", key: "settings") {
+            value
+          }
+        }
+        shop {
+          id
+        }
+      }`,
+  );
+  const storefrontSyncQueryJson = await storefrontSyncQueryResponse.json();
+  const storefrontRawSettings =
+    storefrontSyncQueryJson?.data?.currentAppInstallation?.metafield?.value;
+  const storefrontSettings = parseLoyaltySettings(storefrontRawSettings);
+  const storefrontPointsPerDollar = storefrontSettings?.pointsPerDollar ?? 0;
+  const shopId = storefrontSyncQueryJson?.data?.shop?.id;
+
+  if (!shopId) {
+    return {
+      ok: false,
+      errors: {
+        form: "Could not load shop information for storefront sync.",
+      },
+    };
+  }
+
+  const storefrontSyncResponse = await admin.graphql(
+    `#graphql
+      mutation syncStorefrontPoints($metafields: [MetafieldsSetInput!]!) {
+        metafieldsSet(metafields: $metafields) {
+          userErrors {
+            field
+            message
+          }
+        }
+      }`,
+    {
+      variables: {
+        metafields: [
+          {
+            // Read-only storefront projection derived from app metafield source.
+            ownerId: shopId,
+            namespace: "loyalty",
+            key: "points_per_dollar_public",
+            type: "number_decimal",
+            value: String(storefrontPointsPerDollar),
+          },
+        ],
+      },
+    },
+  );
+  const storefrontSyncJson = await storefrontSyncResponse.json();
+  const storefrontSyncErrors =
+    storefrontSyncJson?.data?.metafieldsSet?.userErrors ?? [];
+
+  if (storefrontSyncErrors.length > 0) {
+    return {
+      ok: false,
+      errors: {
+        form: storefrontSyncErrors[0].message,
       },
     };
   }
