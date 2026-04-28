@@ -20,8 +20,8 @@ api_version = "2026-07"
   uri = "/webhooks/app/scopes_update"
 
   [[webhooks.subscriptions]]
-  topics = [ "orders/create" ]
-  uri = "/webhooks/orders/create"
+topics = [ "orders/create" ]
+uri = "/webhooks/orders/create"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
@@ -46,6 +46,14 @@ description = "Derived public value for theme display. Source of truth is app me
   [shop.metafields.loyalty.points_per_dollar_public.access]
   admin = "merchant_read_write"
   storefront = "public_read"
+
+[customer.metafields.loyalty.points]
+type = "number_integer"
+name = "Loyalty Points"
+description = "Stores customer loyalty points balance"
+
+  [customer.metafields.loyalty.points.access]
+  admin = "merchant_read_write"
 
 [metaobjects.app.example]
 name = "Example"
