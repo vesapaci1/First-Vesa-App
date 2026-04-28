@@ -50,7 +50,7 @@ export const action = async ({ request }) => {
           }
         }
         customer(id: $customerId) {
-          metafield(namespace: "app--350426398721--loyalty", key: "points") {
+          metafield(namespace: "$app:loyalty", key: "points") {
             value
           }
         }
@@ -110,7 +110,7 @@ export const action = async ({ request }) => {
         metafields: [
           {
             ownerId: customerGid,
-            namespace: "app--350426398721--loyalty",
+            namespace: "$app:loyalty",
             key: "points",
             type: "number_integer",
             value: String(updatedPoints),
