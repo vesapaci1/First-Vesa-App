@@ -1,6 +1,7 @@
 import "@shopify/ui-extensions/preact";
 import {render} from "preact";
-import {useEffect, useState} from "preact/hooks";
+import {useState} from "preact/hooks";
+import {useAppMetafields} from "@shopify/ui-extensions/checkout/preact";
 
 export default function extension() {
   render(<Extension />, document.body);
@@ -9,80 +10,23 @@ export default function extension() {
 function Extension() {
   const customerContext = getCheckoutCustomerContext();
   const [message, setMessage] = useState("");
-  const [points, setPoints] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
 
   const shopify = globalThis.shopify;
-  const {isLoggedIn, customerId, email, shop} = customerContext;
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadPoints() {
-      if (!isLoggedIn) {
-        setPoints(0);
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        console.log(
-          "[checkout-ui] requesting loyalty points",
-          JSON.stringify({customerId, email, shop}),
-        );
-
-        const response = await fetch("/api/loyalty-points", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            customerId,
-            email,
-            shop,
-          }),
-        });
-
-        if (!response.ok) {
-          console.log("[checkout-ui] loyalty API response not OK", response.status);
-          if (!cancelled) setPoints(0);
-          return;
-        }
-
-        const data = await response.json();
-        console.log("[checkout-ui] loyalty API response", data);
-        const parsedPoints = Number(data?.points);
-        const safePoints =
-          Number.isFinite(parsedPoints) && parsedPoints >= 0 ? parsedPoints : 0;
-        if (!cancelled) setPoints(safePoints);
-      } catch (error) {
-        console.log("[checkout-ui] loyalty API request failed", error);
-        if (!cancelled) setPoints(0);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    loadPoints();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isLoggedIn, customerId, email, shop]);
+  const {isLoggedIn} = customerContext;
+  const customerMetafields = useAppMetafields({
+    namespace: "loyalty",
+    key: "points",
+    type: "customer",
+  });
+  const customerPointsValue = customerMetafields[0]?.metafield?.value;
+  const parsedPoints = Number(customerPointsValue);
+  const points = Number.isFinite(parsedPoints) && parsedPoints > 0 ? parsedPoints : 0;
 
   if (!shopify || !shopify.buyerIdentity || !isLoggedIn) {
     return (
       <s-stack>
         <s-text>You have 0 loyalty points</s-text>
         <s-text>Sign in to use loyalty points</s-text>
-      </s-stack>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <s-stack>
-        <s-text>Loading loyalty points...</s-text>
       </s-stack>
     );
   }
