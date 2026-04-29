@@ -6,10 +6,10 @@
 api_version = "2026-01"
 
 [[extensions]]
-name = "loyalty-checkout-redemption"
-handle = "loyalty-checkout-redemption"
+name = "Checkout-UI"
+handle = "checkout-ui"
 type = "ui_extension"
-uid = "b362cf29-85e4-c254-d1d9-8f518c7fb9d2168b2681"
+uid = "fddfc370-27c7-c30f-4ee0-a927194e2accadefd40c"
 
 # Controls where in Shopify your extension will be injected,
 # and the file that contains your extension’s source code. Learn more:
