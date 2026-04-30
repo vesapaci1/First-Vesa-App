@@ -78,12 +78,18 @@ export const action = async ({ request }) => {
       query loyaltySettingsOwnerIds {
         currentAppInstallation {
           id
+          metafield(namespace: "loyalty", key: "discount_id") {
+            value
+          }
         }
       }`,
   );
   const idsQueryJson = await idsQueryResponse.json();
   // App-owned metafield: ownerId is the AppInstallation id, not the Shop id.
   const appInstallationId = idsQueryJson?.data?.currentAppInstallation?.id;
+  // Discount owner for function config sync. Expected to come from discountAutomaticAppCreate result.
+  const discountId =
+    idsQueryJson?.data?.currentAppInstallation?.metafield?.value ?? null;
 
   if (!appInstallationId) {
     return {
@@ -93,6 +99,20 @@ export const action = async ({ request }) => {
       },
     };
   }
+
+  if (!discountId) {
+    return {
+      ok: false,
+      errors: {
+        form: "Could not load loyalty discount id for function settings sync.",
+      },
+    };
+  }
+
+  const settingsJsonValue = JSON.stringify({
+    pointsPerDollar,
+    rewardValuePerPoint,
+  });
 
   const saveSettingsResponse = await admin.graphql(
     `#graphql
@@ -118,10 +138,15 @@ export const action = async ({ request }) => {
             namespace: "loyalty",
             key: "settings",
             type: "json",
-            value: JSON.stringify({
-              pointsPerDollar,
-              rewardValuePerPoint,
-            }),
+            value: settingsJsonValue,
+          },
+          {
+            // Mirror config onto the discount owner so the function can read discount.metafield.
+            ownerId: discountId,
+            namespace: "loyalty",
+            key: "settings",
+            type: "json",
+            value: settingsJsonValue,
           },
         ],
       },

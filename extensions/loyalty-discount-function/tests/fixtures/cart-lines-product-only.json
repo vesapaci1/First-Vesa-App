@@ -9,41 +9,18 @@
             "id": "gid://shopify/CartLine/0",
             "cost": {
               "subtotalAmount": {
-                "amount": "6.0"
+                "amount": "100.0"
               }
             }
           }
         ]
       },
       "discount": {
-        "discountClasses": ["PRODUCT", "ORDER", "SHIPPING"]
+        "discountClasses": ["PRODUCT"]
       }
     },
-    "inputBytes": 126,
     "output": {
       "operations": [
-        {
-          "orderDiscountsAdd": {
-            "candidates": [
-              {
-                "message": "10% OFF ORDER",
-                "targets": [
-                  {
-                    "orderSubtotal": {
-                      "excludedCartLineIds": []
-                    }
-                  }
-                ],
-                "value": {
-                  "percentage": {
-                    "value": 10.0
-                  }
-                }
-              }
-            ],
-            "selectionStrategy": "FIRST"
-          }
-        },
         {
           "productDiscountsAdd": {
             "candidates": [

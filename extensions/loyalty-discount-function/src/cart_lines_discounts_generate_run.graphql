@@ -1,4 +1,4 @@
-query Input {
+query CartInput {
   cart {
     attribute(key: "loyalty_points_to_redeem") {
       value
@@ -14,5 +14,8 @@ query Input {
   }
   discount {
     discountClasses
+    metafield(namespace: "loyalty", key: "settings") {
+      jsonValue
+    }
   }
 }
