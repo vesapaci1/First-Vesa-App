@@ -7,6 +7,9 @@
     "**/*.jsx",
     ".react-router/types/**/*"
   ],
+  "exclude": [
+    "extensions/loyalty-checkout-redemption/**/*"
+  ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "strict": true,
