@@ -34,8 +34,9 @@ api_access = true
 # https://shopify.dev/docs/api/checkout-ui-extensions/latest/configuration#metafields
 
 [[extensions.metafields]]
-namespace = "loyalty"
+namespace = "$app:loyalty"
 key = "points"
+type = "customer"
 
 # Defines settings that will be collected from merchants installing
 # your extension. Learn more:

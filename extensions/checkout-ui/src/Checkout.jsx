@@ -14,10 +14,11 @@ function Extension() {
   const shopify = globalThis.shopify;
   const {isLoggedIn} = customerContext;
   const customerMetafields = useAppMetafields({
-    namespace: "loyalty",
+    namespace: "$app:loyalty",
     key: "points",
     type: "customer",
   });
+  console.log("Customer metafields:", customerMetafields);
   const customerPointsValue = customerMetafields[0]?.metafield?.value;
   const parsedPoints = Number(customerPointsValue);
   const points = Number.isFinite(parsedPoints) && parsedPoints > 0 ? parsedPoints : 0;
