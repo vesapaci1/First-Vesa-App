@@ -1,0 +1,18 @@
+query Input {
+  cart {
+    attribute(key: "loyalty_points_to_redeem") {
+      value
+    }
+    lines {
+      id
+      cost {
+        subtotalAmount {
+          amount
+        }
+      }
+    }
+  }
+  discount {
+    discountClasses
+  }
+}
