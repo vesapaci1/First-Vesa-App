@@ -10,6 +10,7 @@ export default function extension() {
 function Extension() {
   const customerContext = getCheckoutCustomerContext();
   const [message, setMessage] = useState("");
+  const [inputValue, setInputValue] = useState("");
 
   const shopify = globalThis.shopify;
   const {isLoggedIn} = customerContext;
@@ -40,11 +41,10 @@ function Extension() {
     );
   }
 
-  async function onPointsChange(event) {
-    const rawValue = event.currentTarget.value;
-    const value = Number(rawValue);
+  async function handleApply() {
+    const value = Number(inputValue);
 
-    if (!rawValue || Number.isNaN(value)) {
+    if (!inputValue || Number.isNaN(value)) {
       setMessage("Enter a valid number of points.");
       return;
     }
@@ -67,7 +67,7 @@ function Extension() {
       });
 
       if (result?.type === "success") {
-        setMessage("Points saved for redemption.");
+        setMessage("Points applied successfully");
       } else {
         setMessage("We could not save your points. Try again.");
       }
@@ -79,10 +79,19 @@ function Extension() {
   return (
     <s-stack>
       <s-text>{`You have ${points} loyalty points`}</s-text>
-      <s-number-field
-        label="Points to redeem"
-        onInput={onPointsChange}
-      />
+      <s-stack direction="inline" alignItems="end" gap="base">
+        <s-number-field
+          label="Points to redeem"
+          value={inputValue}
+          onInput={(event) => setInputValue(String((/** @type {any} */ (event.currentTarget)).value ?? ""))}
+        />
+        <s-button
+          disabled={!inputValue || Number.isNaN(Number(inputValue)) || Number(inputValue) <= 0}
+          onClick={handleApply}
+        >
+          Apply
+        </s-button>
+      </s-stack>
       <s-text>{message}</s-text>
     </s-stack>
   );
