@@ -9,6 +9,7 @@ export const action = async ({ request }) => {
   } else if (typeof payload === "string") {
     try {
       orderPayload = JSON.parse(payload);
+      console.log("orderPayload", orderPayload);
     } catch {
       orderPayload = {};
     }
@@ -22,6 +23,7 @@ export const action = async ({ request }) => {
     orderPayload.total_outstanding ??
     null;
 
+    console.log("orderPayload", orderPayload);
   console.log(`Received ${topic} webhook for ${shop}`);
   console.log(
     `[orders/create] orderId=${orderId} customerId=${customerId} orderTotal=${orderTotal}`,
